@@ -30,9 +30,9 @@ func Mapping(pattern, path string, st interface{}) error {
 			switch f.Kind() {
 			case reflect.Int:
 				v, _ := strconv.Atoi(pathSegment)
-				sv.FieldByName(key).SetInt(int64(v))
+				f.SetInt(int64(v))
 			case reflect.String:
-				sv.FieldByName(key).SetString(pathSegment)
+				f.SetString(pathSegment)
 			}
 		} else if pathSegment != patternSegment {
 			return fmt.Errorf("pattern(%v) does not match path(%v)", pattern, path)
