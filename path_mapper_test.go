@@ -61,6 +61,17 @@ func TestMapping(t *testing.T) {
 			},
 		},
 		{
+			name: "Pattern and field types do not match",
+			args: args{
+				pattern: "/{owner}/{repository}/issues/{number}",
+				path:    "/KamikazeZirou/path-mapper/issues/abc",
+				st:      GitHubIssue{},
+			},
+			expected: expected{
+				success: false,
+			},
+		},
+		{
 			name: "Length of pattern is invalid",
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{number}",

@@ -23,14 +23,22 @@ func Mapping(pattern, path string, st interface{}) error {
 		patternSegment := patternSegments[i]
 
 		if strings.HasPrefix(patternSegment, "{") && strings.HasSuffix(patternSegment, "}") {
-			key := patternSegment[1 : len(patternSegment)-1]
-			key = strings.Title(key)
+			n := patternSegment[1 : len(patternSegment)-1]
+			n = strings.Title(n)
 
-			f := sv.FieldByName(key)
+			f := sv.FieldByName(n)
 			switch f.Kind() {
 			case reflect.Int:
-				v, _ := strconv.Atoi(pathSegment)
-				f.SetInt(int64(v))
+				if v, err := strconv.ParseInt(pathSegment, 10, 0); err == nil {
+					f.SetInt(int64(v))
+				} else {
+					return fmt.Errorf(
+						"failed mapping %v to %v because %v is not int",
+						pathSegment,
+						f,
+						pathSegment,
+					)
+				}
 			case reflect.String:
 				f.SetString(pathSegment)
 			}
