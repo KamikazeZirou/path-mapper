@@ -45,22 +45,6 @@ func TestMapping(t *testing.T) {
 			},
 		},
 		{
-			name: "Basic2",
-			args: args{
-				pattern: "/{owner}/{repository}/issues/{number}",
-				path:    "/guest/sandbox/issues/2",
-				st:      GitHubIssue{},
-			},
-			expected: expected{
-				st: GitHubIssue{
-					Owner:      "guest",
-					Repository: "sandbox",
-					Number:     2,
-				},
-				success: true,
-			},
-		},
-		{
 			name: "There is no field corresponding to the pattern in the structure to be mapped.",
 			args: args{
 				pattern: "/{owner}/{repository}/actions/runs/{buildNumber}",
