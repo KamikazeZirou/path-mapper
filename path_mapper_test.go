@@ -71,18 +71,36 @@ func TestMapping(t *testing.T) {
 				success: false,
 			},
 		},
+		{
+			name: "The elements of pattern and path do not match.",
+			args: args{
+				pattern: "/{owner}/{repository}/issues/{number}",
+				path:    "/KamikazeZirou/path-mapper/foobar/1",
+				st:      GitHubIssue{},
+			},
+			expected: expected{
+				success: false,
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := Mapping(tt.args.pattern, tt.args.path, &(tt.args.st))
-			if (err == nil) != tt.expected.success {
-				t.Errorf("Mapping() return %v, which is not what we expected.", err)
+			if err != nil {
+				if tt.expected.success {
+					t.Errorf("Mapping() return %v, which is not what we expected.", err)
+				}
 				return
-			}
+			} else {
+				if !tt.expected.success {
+					t.Errorf("Mapping() return %v, which is not what we expected.", err)
+					return
+				}
 
-			if diff := cmp.Diff(tt.args.st, tt.expected.st); diff != "" {
-				t.Errorf("Mapping() mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(tt.args.st, tt.expected.st); diff != "" {
+					t.Errorf("Mapping() mismatch (-want +got):\n%s", diff)
+				}
 			}
 		})
 	}
