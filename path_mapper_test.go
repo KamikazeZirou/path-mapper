@@ -61,6 +61,22 @@ func TestMapping(t *testing.T) {
 			},
 		},
 		{
+			name: "There is no field corresponding to the pattern in the structure to be mapped.",
+			args: args{
+				pattern: "/{owner}/{repository}/actions/runs/{buildNumber}",
+				path:    "/guest/sandbox/actions/runs/1",
+				st:      GitHubIssue{},
+			},
+			expected: expected{
+				st: GitHubIssue{
+					Owner:      "guest",
+					Repository: "sandbox",
+					Number:     0,
+				},
+				success: true,
+			},
+		},
+		{
 			name: "Length of pattern is invalid",
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{number}",
