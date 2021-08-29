@@ -12,16 +12,21 @@ type GitHubIssue struct {
 }
 
 func TestMapping(t *testing.T) {
+	type expected struct {
+		st      GitHubIssue
+		success bool
+	}
+
 	type args struct {
-		pattern  string
-		path     string
-		st       GitHubIssue
-		expected GitHubIssue
+		pattern string
+		path    string
+		st      GitHubIssue
 	}
 
 	tests := []struct {
-		name string
-		args args
+		name     string
+		args     args
+		expected expected
 	}{
 		{
 			name: "Basic",
@@ -29,11 +34,14 @@ func TestMapping(t *testing.T) {
 				pattern: "/{owner}/{repository}/issues/{number}",
 				path:    "/KamikazeZirou/path-mapper/issues/1",
 				st:      GitHubIssue{},
-				expected: GitHubIssue{
+			},
+			expected: expected{
+				st: GitHubIssue{
 					Owner:      "KamikazeZirou",
 					Repository: "path-mapper",
 					Number:     1,
 				},
+				success: true,
 			},
 		},
 		{
@@ -42,20 +50,38 @@ func TestMapping(t *testing.T) {
 				pattern: "/{owner}/{repository}/issues/{number}",
 				path:    "/guest/sandbox/issues/2",
 				st:      GitHubIssue{},
-				expected: GitHubIssue{
+			},
+			expected: expected{
+				st: GitHubIssue{
 					Owner:      "guest",
 					Repository: "sandbox",
 					Number:     2,
 				},
+				success: true,
+			},
+		},
+		{
+			name: "Length of pattern is invalid",
+			args: args{
+				pattern: "/{owner}/{repository}/issues/{number}",
+				path:    "/guest/sandbox/issues",
+				st:      GitHubIssue{},
+			},
+			expected: expected{
+				success: false,
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Mapping(tt.args.pattern, tt.args.path, &(tt.args.st))
+			err := Mapping(tt.args.pattern, tt.args.path, &(tt.args.st))
+			if (err == nil) != tt.expected.success {
+				t.Errorf("Mapping() return %v, which is not what we expected.", err)
+				return
+			}
 
-			if diff := cmp.Diff(tt.args.st, tt.args.expected); diff != "" {
+			if diff := cmp.Diff(tt.args.st, tt.expected.st); diff != "" {
 				t.Errorf("Mapping() mismatch (-want +got):\n%s", diff)
 			}
 		})
