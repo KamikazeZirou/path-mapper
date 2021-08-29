@@ -13,14 +13,14 @@ type GitHubIssue struct {
 
 func TestMapping(t *testing.T) {
 	type expected struct {
-		st      GitHubIssue
+		st      interface{}
 		success bool
 	}
 
 	type args struct {
 		pattern string
 		path    string
-		st      GitHubIssue
+		st      interface{}
 	}
 
 	tests := []struct {

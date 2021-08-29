@@ -17,7 +17,9 @@ func Mapping(pattern, path string, st interface{}) error {
 		return fmt.Errorf("pattern(%v) does not match path(%v)", pattern, path)
 	}
 
-	sv := reflect.ValueOf(st).Elem()
+	v := reflect.ValueOf(st).Elem()
+	sv := reflect.New(v.Elem().Type()).Elem()
+
 	for i := 0; i < len(patternSegments); i++ {
 		patternSegment := patternSegments[i]
 		pathSegment := pathSegments[i]
@@ -31,6 +33,9 @@ func Mapping(pattern, path string, st interface{}) error {
 			return fmt.Errorf("pattern(%v) does not match path(%v)", pattern, path)
 		}
 	}
+
+	v.Set(sv)
+
 	return nil
 }
 
