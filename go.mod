@@ -1,4 +1,4 @@
-module path_mapper
+module github.com/KamikazeZirou/path-mapper
 
 go 1.17
 
