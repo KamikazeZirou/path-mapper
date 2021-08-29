@@ -2,6 +2,7 @@ package path_mapper
 
 import (
 	"github.com/google/go-cmp/cmp"
+	"strconv"
 	"testing"
 )
 
@@ -9,9 +10,18 @@ type GitHubIssue struct {
 	Owner      string
 	Repository string
 	Number     int
+	StrNumber  string
 }
 
 func TestMapping(t *testing.T) {
+	Mapper["strNumber"] = func(v string) (interface{}, error) {
+		if _, err := strconv.Atoi(v); err == nil {
+			return "#" + v, nil
+		} else {
+			return nil, err
+		}
+	}
+
 	type expected struct {
 		st      interface{}
 		success bool
@@ -58,6 +68,34 @@ func TestMapping(t *testing.T) {
 					Number:     0,
 				},
 				success: true,
+			},
+		},
+		{
+			name: "Custom Mapper",
+			args: args{
+				pattern: "/{owner}/{repository}/issues/{strNumber}",
+				path:    "/KamikazeZirou/path-mapper/issues/1",
+				st:      GitHubIssue{},
+			},
+			expected: expected{
+				st: GitHubIssue{
+					Owner:      "KamikazeZirou",
+					Repository: "path-mapper",
+					Number:     0,
+					StrNumber:  "#1",
+				},
+				success: true,
+			},
+		},
+		{
+			name: "Custom Mapper returns error",
+			args: args{
+				pattern: "/{owner}/{repository}/issues/{strNumber}",
+				path:    "/KamikazeZirou/path-mapper/issues/abc",
+				st:      GitHubIssue{},
+			},
+			expected: expected{
+				success: false,
 			},
 		},
 		{

@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+type MapperFunc func(v string) (interface{}, error)
+
+var (
+	Mapper = make(map[string]MapperFunc)
+)
+
 // Mapping a URL or other path to a structure.
 //goland:noinspection GoUnusedExportedFunction
 func Mapping(pattern, path string, st interface{}) error {
@@ -40,9 +46,24 @@ func Mapping(pattern, path string, st interface{}) error {
 }
 
 func setField(sv reflect.Value, n, v string) error {
-	n = strings.Title(n)
+	f := sv.FieldByName(strings.Title(n))
+	if !f.IsValid() {
+		return nil
+	}
 
-	f := sv.FieldByName(n)
+	if !f.CanSet() {
+		return fmt.Errorf("%v cannot be set value", n)
+	}
+
+	if mapper, ok := Mapper[n]; ok {
+		if mv, err := mapper(v); err == nil {
+			f.Set(reflect.ValueOf(mv))
+			return nil
+		} else {
+			return fmt.Errorf(": %w", err)
+		}
+	}
+
 	switch f.Kind() {
 	case reflect.Int:
 		if v, err := strconv.ParseInt(v, 10, 0); err == nil {
