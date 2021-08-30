@@ -73,7 +73,49 @@ func setField(sv reflect.Value, n, v string) error {
 		}
 	case reflect.String:
 		f.SetString(v)
+	case reflect.Ptr:
+		t := Deref(f.Type())
+		switch t.Kind() {
+		case reflect.Int,
+			reflect.Int8,
+			reflect.Int16,
+			reflect.Int32,
+			reflect.Int64:
+			if v, err := strconv.ParseInt(v, 10, 0); err == nil {
+				setIntPtr(f, t.Kind(), v)
+			} else {
+				return fmt.Errorf("failed mapping %v to %v because it is not int", v, f)
+			}
+		case reflect.String:
+			f.Set(reflect.ValueOf(&v))
+		}
 	}
 
 	return nil
+}
+
+func setIntPtr(p reflect.Value, k reflect.Kind, x int64) {
+	switch k {
+	case reflect.Int:
+		v := int(x)
+		p.Set(reflect.ValueOf(&v))
+	case reflect.Int8:
+		v := int8(x)
+		p.Set(reflect.ValueOf(&v))
+	case reflect.Int16:
+		v := int16(x)
+		p.Set(reflect.ValueOf(&v))
+	case reflect.Int32:
+		v := int32(x)
+		p.Set(reflect.ValueOf(&v))
+	case reflect.Int64:
+		p.Set(reflect.ValueOf(&x))
+	}
+}
+
+func Deref(t reflect.Type) reflect.Type {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t
 }
