@@ -14,10 +14,10 @@ type GitHubIssue struct {
 }
 
 type GitHubIssuePtr struct {
-	Owner      *string
-	Repository *string
-	Number     *int
-	StrNumber  *string
+	Owner        *string
+	Repository   *string
+	Number       *int
+	StrNumberPtr *string
 }
 
 func strAddr(s string) *string {
@@ -32,6 +32,14 @@ func TestMapping(t *testing.T) {
 	Mapper["strNumber"] = func(v string) (interface{}, error) {
 		if _, err := strconv.Atoi(v); err == nil {
 			return "#" + v, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	Mapper["strNumberPtr"] = func(v string) (interface{}, error) {
+		if _, err := strconv.Atoi(v); err == nil {
+			return strAddr("#" + v), nil
 		} else {
 			return nil, err
 		}
@@ -78,10 +86,10 @@ func TestMapping(t *testing.T) {
 			},
 			want: want{
 				st: GitHubIssuePtr{
-					Owner:      strAddr("KamikazeZirou"),
-					Repository: strAddr("path-mapper"),
-					Number:     intAddr(1),
-					StrNumber:  nil,
+					Owner:        strAddr("KamikazeZirou"),
+					Repository:   strAddr("path-mapper"),
+					Number:       intAddr(1),
+					StrNumberPtr: nil,
 				},
 				success: true,
 			},
@@ -115,6 +123,23 @@ func TestMapping(t *testing.T) {
 					Repository: "path-mapper",
 					Number:     0,
 					StrNumber:  "#1",
+				},
+				success: true,
+			},
+		},
+		{
+			name: "Custom Mapper(Ptr)",
+			args: args{
+				pattern: "/{owner}/{repository}/issues/{strNumberPtr}",
+				path:    "/KamikazeZirou/path-mapper/issues/1",
+				st:      GitHubIssuePtr{},
+			},
+			want: want{
+				st: GitHubIssuePtr{
+					Owner:        strAddr("KamikazeZirou"),
+					Repository:   strAddr("path-mapper"),
+					Number:       nil,
+					StrNumberPtr: strAddr("#1"),
 				},
 				success: true,
 			},
@@ -179,7 +204,7 @@ func TestMapping(t *testing.T) {
 					return
 				}
 
-				if diff := cmp.Diff(tt.args.st, tt.want.st); diff != "" {
+				if diff := cmp.Diff(tt.want.st, tt.args.st); diff != "" {
 					t.Errorf("Mapping() mismatch (-want +got):\n%s", diff)
 				}
 			}
