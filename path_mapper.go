@@ -65,16 +65,30 @@ func setField(sv reflect.Value, n, v string) error {
 	}
 
 	switch f.Kind() {
-	case reflect.Int:
+	case reflect.Int,
+		reflect.Int8,
+		reflect.Int16,
+		reflect.Int32,
+		reflect.Int64:
 		if v, err := strconv.ParseInt(v, 10, 0); err == nil {
 			f.SetInt(v)
+		} else {
+			return fmt.Errorf("failed mapping %v to %v because it is not int", v, f)
+		}
+	case reflect.Uint,
+		reflect.Uint8,
+		reflect.Uint16,
+		reflect.Uint32,
+		reflect.Uint64:
+		if v, err := strconv.ParseUint(v, 10, 0); err == nil {
+			f.SetUint(v)
 		} else {
 			return fmt.Errorf("failed mapping %v to %v because it is not int", v, f)
 		}
 	case reflect.String:
 		f.SetString(v)
 	case reflect.Ptr:
-		t := Deref(f.Type())
+		t := deref(f.Type())
 		switch t.Kind() {
 		case reflect.Int,
 			reflect.Int8,
@@ -83,6 +97,16 @@ func setField(sv reflect.Value, n, v string) error {
 			reflect.Int64:
 			if v, err := strconv.ParseInt(v, 10, 0); err == nil {
 				setIntPtr(f, t.Kind(), v)
+			} else {
+				return fmt.Errorf("failed mapping %v to %v because it is not int", v, f)
+			}
+		case reflect.Uint,
+			reflect.Uint8,
+			reflect.Uint16,
+			reflect.Uint32,
+			reflect.Uint64:
+			if v, err := strconv.ParseUint(v, 10, 0); err == nil {
+				setUintPtr(f, t.Kind(), v)
 			} else {
 				return fmt.Errorf("failed mapping %v to %v because it is not int", v, f)
 			}
@@ -113,7 +137,26 @@ func setIntPtr(p reflect.Value, k reflect.Kind, x int64) {
 	}
 }
 
-func Deref(t reflect.Type) reflect.Type {
+func setUintPtr(p reflect.Value, k reflect.Kind, x uint64) {
+	switch k {
+	case reflect.Uint:
+		v := uint(x)
+		p.Set(reflect.ValueOf(&v))
+	case reflect.Uint8:
+		v := uint8(x)
+		p.Set(reflect.ValueOf(&v))
+	case reflect.Uint16:
+		v := uint16(x)
+		p.Set(reflect.ValueOf(&v))
+	case reflect.Uint32:
+		v := uint32(x)
+		p.Set(reflect.ValueOf(&v))
+	case reflect.Uint64:
+		p.Set(reflect.ValueOf(&x))
+	}
+}
+
+func deref(t reflect.Type) reflect.Type {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}

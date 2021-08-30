@@ -20,12 +20,30 @@ type GitHubIssuePtr struct {
 	StrNumberPtr *string
 }
 
-func strAddr(s string) *string {
-	return &s
+type Numbers struct {
+	Int    int
+	Int8   int8
+	Int16  int16
+	Int32  int32
+	Int64  int64
+	Uint   uint
+	Uint8  uint8
+	Uint16 uint16
+	Uint32 uint32
+	Uint64 uint64
 }
 
-func intAddr(i int) *int {
-	return &i
+type NumberPtrs struct {
+	Int    *int
+	Int8   *int8
+	Int16  *int16
+	Int32  *int32
+	Int64  *int64
+	Uint   *uint
+	Uint8  *uint8
+	Uint16 *uint16
+	Uint32 *uint32
+	Uint64 *uint64
 }
 
 func TestMapping(t *testing.T) {
@@ -90,6 +108,52 @@ func TestMapping(t *testing.T) {
 					Repository:   strAddr("path-mapper"),
 					Number:       intAddr(1),
 					StrNumberPtr: nil,
+				},
+				success: true,
+			},
+		},
+		{
+			name: "Numbers",
+			args: args{
+				pattern: "/{Int}/{Int8}/{Int16}/{Int32}/{Int64}/{Uint}/{Uint8}/{Uint16}/{Uint32}/{Uint64}",
+				path:    "/1/2/3/4/5/6/7/8/9/10",
+				st:      Numbers{},
+			},
+			want: want{
+				st: Numbers{
+					Int:    1,
+					Int8:   2,
+					Int16:  3,
+					Int32:  4,
+					Int64:  5,
+					Uint:   6,
+					Uint8:  7,
+					Uint16: 8,
+					Uint32: 9,
+					Uint64: 10,
+				},
+				success: true,
+			},
+		},
+		{
+			name: "Number Pointers",
+			args: args{
+				pattern: "/{Int}/{Int8}/{Int16}/{Int32}/{Int64}/{Uint}/{Uint8}/{Uint16}/{Uint32}/{Uint64}",
+				path:    "/1/2/3/4/5/6/7/8/9/10",
+				st:      NumberPtrs{},
+			},
+			want: want{
+				st: NumberPtrs{
+					Int:    intAddr(1),
+					Int8:   int8Addr(2),
+					Int16:  int16Addr(3),
+					Int32:  int32Addr(4),
+					Int64:  int64Addr(5),
+					Uint:   uintAddr(6),
+					Uint8:  uint8Addr(7),
+					Uint16: uint16Addr(8),
+					Uint32: uint32Addr(9),
+					Uint64: uint64Addr(10),
 				},
 				success: true,
 			},
@@ -210,4 +274,48 @@ func TestMapping(t *testing.T) {
 			}
 		})
 	}
+}
+
+func strAddr(s string) *string {
+	return &s
+}
+
+func intAddr(i int) *int {
+	return &i
+}
+
+func int8Addr(i int8) *int8 {
+	return &i
+}
+
+func int16Addr(i int16) *int16 {
+	return &i
+}
+
+func int32Addr(i int32) *int32 {
+	return &i
+}
+
+func int64Addr(i int64) *int64 {
+	return &i
+}
+
+func uintAddr(i uint) *uint {
+	return &i
+}
+
+func uint8Addr(i uint8) *uint8 {
+	return &i
+}
+
+func uint16Addr(i uint16) *uint16 {
+	return &i
+}
+
+func uint32Addr(i uint32) *uint32 {
+	return &i
+}
+
+func uint64Addr(i uint64) *uint64 {
+	return &i
 }
