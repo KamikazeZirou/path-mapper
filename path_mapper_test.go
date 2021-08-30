@@ -13,6 +13,21 @@ type GitHubIssue struct {
 	StrNumber  string
 }
 
+type GitHubIssuePtr struct {
+	Owner      *string
+	Repository *string
+	Number     *int
+	StrNumber  *string
+}
+
+func strAddr(s string) *string {
+	return &s
+}
+
+func intAddr(i int) *int {
+	return &i
+}
+
 func TestMapping(t *testing.T) {
 	Mapper["strNumber"] = func(v string) (interface{}, error) {
 		if _, err := strconv.Atoi(v); err == nil {
@@ -22,7 +37,7 @@ func TestMapping(t *testing.T) {
 		}
 	}
 
-	type expected struct {
+	type want struct {
 		st      interface{}
 		success bool
 	}
@@ -34,9 +49,9 @@ func TestMapping(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		args     args
-		expected expected
+		name string
+		args args
+		want want
 	}{
 		{
 			name: "Basic",
@@ -45,11 +60,28 @@ func TestMapping(t *testing.T) {
 				path:    "/KamikazeZirou/path-mapper/issues/1",
 				st:      GitHubIssue{},
 			},
-			expected: expected{
+			want: want{
 				st: GitHubIssue{
 					Owner:      "KamikazeZirou",
 					Repository: "path-mapper",
 					Number:     1,
+				},
+				success: true,
+			},
+		},
+		{
+			name: "Pointer Field",
+			args: args{
+				pattern: "/{owner}/{repository}/issues/{number}",
+				path:    "/KamikazeZirou/path-mapper/issues/1",
+				st:      GitHubIssuePtr{},
+			},
+			want: want{
+				st: GitHubIssuePtr{
+					Owner:      strAddr("KamikazeZirou"),
+					Repository: strAddr("path-mapper"),
+					Number:     intAddr(1),
+					StrNumber:  nil,
 				},
 				success: true,
 			},
@@ -61,7 +93,7 @@ func TestMapping(t *testing.T) {
 				path:    "/guest/sandbox/actions/runs/1",
 				st:      GitHubIssue{},
 			},
-			expected: expected{
+			want: want{
 				st: GitHubIssue{
 					Owner:      "guest",
 					Repository: "sandbox",
@@ -77,7 +109,7 @@ func TestMapping(t *testing.T) {
 				path:    "/KamikazeZirou/path-mapper/issues/1",
 				st:      GitHubIssue{},
 			},
-			expected: expected{
+			want: want{
 				st: GitHubIssue{
 					Owner:      "KamikazeZirou",
 					Repository: "path-mapper",
@@ -94,7 +126,7 @@ func TestMapping(t *testing.T) {
 				path:    "/KamikazeZirou/path-mapper/issues/abc",
 				st:      GitHubIssue{},
 			},
-			expected: expected{
+			want: want{
 				success: false,
 			},
 		},
@@ -105,7 +137,7 @@ func TestMapping(t *testing.T) {
 				path:    "/KamikazeZirou/path-mapper/issues/abc",
 				st:      GitHubIssue{},
 			},
-			expected: expected{
+			want: want{
 				success: false,
 			},
 		},
@@ -116,7 +148,7 @@ func TestMapping(t *testing.T) {
 				path:    "/guest/sandbox/issues",
 				st:      GitHubIssue{},
 			},
-			expected: expected{
+			want: want{
 				success: false,
 			},
 		},
@@ -127,7 +159,7 @@ func TestMapping(t *testing.T) {
 				path:    "/KamikazeZirou/path-mapper/foobar/1",
 				st:      GitHubIssue{},
 			},
-			expected: expected{
+			want: want{
 				success: false,
 			},
 		},
@@ -137,17 +169,17 @@ func TestMapping(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := Mapping(tt.args.pattern, tt.args.path, &(tt.args.st))
 			if err != nil {
-				if tt.expected.success {
-					t.Errorf("Mapping() return %v, which is not what we expected.", err)
+				if tt.want.success {
+					t.Errorf("Mapping() return %v, which is not what we want.", err)
 				}
 				return
 			} else {
-				if !tt.expected.success {
-					t.Errorf("Mapping() return %v, which is not what we expected.", err)
+				if !tt.want.success {
+					t.Errorf("Mapping() return %v, which is not what we want.", err)
 					return
 				}
 
-				if diff := cmp.Diff(tt.args.st, tt.expected.st); diff != "" {
+				if diff := cmp.Diff(tt.args.st, tt.want.st); diff != "" {
 					t.Errorf("Mapping() mismatch (-want +got):\n%s", diff)
 				}
 			}
