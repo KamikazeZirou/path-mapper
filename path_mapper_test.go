@@ -84,10 +84,10 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{number}",
 				path:    "/KamikazeZirou/path-mapper/issues/1",
-				st:      GitHubIssue{},
+				st:      &GitHubIssue{},
 			},
 			want: want{
-				st: GitHubIssue{
+				st: &GitHubIssue{
 					Owner:      "KamikazeZirou",
 					Repository: "path-mapper",
 					Number:     1,
@@ -100,10 +100,10 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{number}",
 				path:    "/KamikazeZirou/path-mapper/issues/1",
-				st:      GitHubIssuePtr{},
+				st:      &GitHubIssuePtr{},
 			},
 			want: want{
-				st: GitHubIssuePtr{
+				st: &GitHubIssuePtr{
 					Owner:        strAddr("KamikazeZirou"),
 					Repository:   strAddr("path-mapper"),
 					Number:       intAddr(1),
@@ -117,10 +117,10 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{Int}/{Int8}/{Int16}/{Int32}/{Int64}/{Uint}/{Uint8}/{Uint16}/{Uint32}/{Uint64}",
 				path:    "/1/2/3/4/5/6/7/8/9/10",
-				st:      Numbers{},
+				st:      &Numbers{},
 			},
 			want: want{
-				st: Numbers{
+				st: &Numbers{
 					Int:    1,
 					Int8:   2,
 					Int16:  3,
@@ -140,10 +140,10 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{Int}/{Int8}/{Int16}/{Int32}/{Int64}/{Uint}/{Uint8}/{Uint16}/{Uint32}/{Uint64}",
 				path:    "/1/2/3/4/5/6/7/8/9/10",
-				st:      NumberPtrs{},
+				st:      &NumberPtrs{},
 			},
 			want: want{
-				st: NumberPtrs{
+				st: &NumberPtrs{
 					Int:    intAddr(1),
 					Int8:   int8Addr(2),
 					Int16:  int16Addr(3),
@@ -163,10 +163,10 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{owner}/{repository}/actions/runs/{buildNumber}",
 				path:    "/guest/sandbox/actions/runs/1",
-				st:      GitHubIssue{},
+				st:      &GitHubIssue{},
 			},
 			want: want{
-				st: GitHubIssue{
+				st: &GitHubIssue{
 					Owner:      "guest",
 					Repository: "sandbox",
 					Number:     0,
@@ -179,10 +179,10 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{strNumber}",
 				path:    "/KamikazeZirou/path-mapper/issues/1",
-				st:      GitHubIssue{},
+				st:      &GitHubIssue{},
 			},
 			want: want{
-				st: GitHubIssue{
+				st: &GitHubIssue{
 					Owner:      "KamikazeZirou",
 					Repository: "path-mapper",
 					Number:     0,
@@ -196,10 +196,10 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{strNumberPtr}",
 				path:    "/KamikazeZirou/path-mapper/issues/1",
-				st:      GitHubIssuePtr{},
+				st:      &GitHubIssuePtr{},
 			},
 			want: want{
-				st: GitHubIssuePtr{
+				st: &GitHubIssuePtr{
 					Owner:        strAddr("KamikazeZirou"),
 					Repository:   strAddr("path-mapper"),
 					Number:       nil,
@@ -213,7 +213,7 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{strNumber}",
 				path:    "/KamikazeZirou/path-mapper/issues/abc",
-				st:      GitHubIssue{},
+				st:      &GitHubIssue{},
 			},
 			want: want{
 				success: false,
@@ -224,7 +224,7 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{number}",
 				path:    "/KamikazeZirou/path-mapper/issues/abc",
-				st:      GitHubIssue{},
+				st:      &GitHubIssue{},
 			},
 			want: want{
 				success: false,
@@ -235,7 +235,7 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{number}",
 				path:    "/guest/sandbox/issues",
-				st:      GitHubIssue{},
+				st:      &GitHubIssue{},
 			},
 			want: want{
 				success: false,
@@ -246,7 +246,33 @@ func TestMapping(t *testing.T) {
 			args: args{
 				pattern: "/{owner}/{repository}/issues/{number}",
 				path:    "/KamikazeZirou/path-mapper/foobar/1",
-				st:      GitHubIssue{},
+				st:      &GitHubIssue{},
+			},
+			want: want{
+				success: false,
+			},
+		},
+		{
+			name: "dest is nil",
+			args: args{
+				pattern: "/{owner}/{repository}/issues/{number}",
+				path:    "/KamikazeZirou/path-mapper/foobar/1",
+				st:      nil,
+			},
+			want: want{
+				success: false,
+			},
+		},
+		{
+			name: "dest is value",
+			args: args{
+				pattern: "/{owner}/{repository}/issues/{number}",
+				path:    "/KamikazeZirou/path-mapper/foobar/1",
+				st: GitHubIssue{
+					Owner:      "KamikazeZirou",
+					Repository: "path-mapper",
+					Number:     1,
+				},
 			},
 			want: want{
 				success: false,
@@ -256,7 +282,7 @@ func TestMapping(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Mapping(tt.args.pattern, tt.args.path, &(tt.args.st))
+			err := Mapping(tt.args.pattern, tt.args.path, tt.args.st)
 			if err != nil {
 				if tt.want.success {
 					t.Errorf("Mapping() return %v, which is not what we want.", err)

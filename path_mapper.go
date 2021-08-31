@@ -1,6 +1,7 @@
 package path_mapper
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -15,7 +16,7 @@ var (
 
 // Mapping a URL or other path to a structure.
 //goland:noinspection GoUnusedExportedFunction
-func Mapping(pattern, path string, st interface{}) error {
+func Mapping(pattern, path string, dest interface{}) error {
 	patternSegments := strings.Split(pattern, "/")
 	pathSegments := strings.Split(path, "/")
 
@@ -23,15 +24,24 @@ func Mapping(pattern, path string, st interface{}) error {
 		return fmt.Errorf("pattern(%v) does not match path(%v)", pattern, path)
 	}
 
-	v := reflect.ValueOf(st).Elem()
-	sv := reflect.New(v.Elem().Type()).Elem()
+	p := reflect.ValueOf(dest)
+
+	if p.Kind() != reflect.Ptr {
+		return errors.New("must pass a pointer, not a value, to dest")
+	}
+
+	if p.IsNil() {
+		return errors.New("must pass non-nil pointer to dest")
+	}
+
+	v := reflect.Indirect(p)
 
 	for i := 0; i < len(patternSegments); i++ {
 		patternSegment := patternSegments[i]
 		pathSegment := pathSegments[i]
 
 		if strings.HasPrefix(patternSegment, "{") && strings.HasSuffix(patternSegment, "}") {
-			err := setField(sv, patternSegment[1:len(patternSegment)-1], pathSegment)
+			err := setField(v, patternSegment[1:len(patternSegment)-1], pathSegment)
 			if err != nil {
 				return fmt.Errorf(": %w", err)
 			}
@@ -39,8 +49,6 @@ func Mapping(pattern, path string, st interface{}) error {
 			return fmt.Errorf("pattern(%v) does not match path(%v)", pattern, path)
 		}
 	}
-
-	v.Set(sv)
 
 	return nil
 }
