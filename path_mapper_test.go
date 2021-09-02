@@ -205,40 +205,6 @@ func TestMapping(t *testing.T) {
 			},
 		},
 		//{
-		//	name: "Custom Mapper",
-		//	args: args{
-		//		pattern: "/{owner}/{repository}/issues/{strNumber}",
-		//		path:    "/KamikazeZirou/path-mapper/issues/1",
-		//		st:      &GitHubIssue{},
-		//	},
-		//	want: want{
-		//		st: &GitHubIssue{
-		//			Owner:      "KamikazeZirou",
-		//			Repository: "path-mapper",
-		//			Number:     0,
-		//			StrNumber:  "#1",
-		//		},
-		//		success: true,
-		//	},
-		//},
-		//{
-		//	name: "Custom Mapper(Ptr)",
-		//	args: args{
-		//		pattern: "/{owner}/{repository}/issues/{strNumberPtr}",
-		//		path:    "/KamikazeZirou/path-mapper/issues/1",
-		//		st:      &GitHubIssuePtr{},
-		//	},
-		//	want: want{
-		//		st: &GitHubIssuePtr{
-		//			Owner:        strAddr("KamikazeZirou"),
-		//			Repository:   strAddr("path-mapper"),
-		//			Number:       nil,
-		//			StrNumberPtr: strAddr("#1"),
-		//		},
-		//		success: true,
-		//	},
-		//},
-		//{
 		//	name: "Custom Mapper returns error",
 		//	args: args{
 		//		pattern: "/{owner}/{repository}/issues/{strNumber}",
