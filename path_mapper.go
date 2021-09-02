@@ -12,7 +12,7 @@ import (
 )
 
 type Parser interface {
-	Parse(s string) interface{}
+	Parse(s string) (interface{}, error)
 }
 
 func lcFirst(s string) string {
@@ -184,9 +184,15 @@ func convertAssign(src string, dest interface{}) error {
 	}
 
 	dv := reflect.Indirect(dpv)
+
 	if parser, ok := dest.(Parser); ok {
-		dv.Set(reflect.ValueOf(parser.Parse(src)))
-		return nil
+		v, err := parser.Parse(src)
+		if err == nil {
+			dv.Set(reflect.ValueOf(v))
+			return nil
+		} else {
+			return fmt.Errorf(": %w", err)
+		}
 	}
 
 	switch dv.Kind() {

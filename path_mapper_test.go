@@ -1,6 +1,7 @@
 package path_mapper
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -16,16 +17,15 @@ type GitHubIssue struct {
 type Weather int32
 
 const (
-	WeatherUnknown Weather = 0
-	WeatherFine    Weather = 1
+	WeatherFine Weather = 1
 )
 
-func (w *Weather) Parse(s string) interface{} {
+func (w *Weather) Parse(s string) (interface{}, error) {
 	switch s {
 	case "fine":
-		return WeatherFine
+		return WeatherFine, nil
 	default:
-		return WeatherUnknown
+		return nil, fmt.Errorf("cannot parse %v", s)
 	}
 }
 
@@ -204,17 +204,17 @@ func TestMapping(t *testing.T) {
 				success: true,
 			},
 		},
-		//{
-		//	name: "Custom Mapper returns error",
-		//	args: args{
-		//		pattern: "/{owner}/{repository}/issues/{strNumber}",
-		//		path:    "/KamikazeZirou/path-mapper/issues/abc",
-		//		st:      &GitHubIssue{},
-		//	},
-		//	want: want{
-		//		success: false,
-		//	},
-		//},
+		{
+			name: "Custom Mapper returns error",
+			args: args{
+				pattern: "/{weather}",
+				path:    "/hoge",
+				st:      &Values{},
+			},
+			want: want{
+				success: false,
+			},
+		},
 		{
 			name: "Pattern and field types do not match",
 			args: args{
