@@ -1,7 +1,6 @@
 package path_mapper
 
 import (
-	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -53,22 +52,6 @@ type EmbedPointers struct {
 }
 
 func TestMapping(t *testing.T) {
-	Mapper["strNumber"] = func(v string) (interface{}, error) {
-		if _, err := strconv.Atoi(v); err == nil {
-			return "#" + v, nil
-		} else {
-			return nil, err
-		}
-	}
-
-	Mapper["strNumberPtr"] = func(v string) (interface{}, error) {
-		if _, err := strconv.Atoi(v); err == nil {
-			return strAddr("#" + v), nil
-		} else {
-			return nil, err
-		}
-	}
-
 	type want struct {
 		st      interface{}
 		success bool

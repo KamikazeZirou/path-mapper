@@ -11,13 +11,7 @@ import (
 	"github.com/KamikazeZirou/path-mapper/internal/reflectx"
 )
 
-type MapperFunc func(v string) (interface{}, error)
-
-var (
-	Mapper = make(map[string]MapperFunc)
-)
-
-func LcFirst(s string) string {
+func lcFirst(s string) string {
 	for i, v := range s {
 		return string(unicode.ToLower(v)) + s[i+1:]
 	}
@@ -57,7 +51,7 @@ func Mapping(pattern, path string, dest interface{}) error {
 		return errors.New("must pass non-nil pointer to dest")
 	}
 
-	m := reflectx.NewMapperFunc("alias", LcFirst)
+	m := reflectx.NewMapperFunc("alias", lcFirst)
 	traversals := m.TraversalsByName(v.Type(), patterns)
 	fields := make([]interface{}, len(patterns))
 	if err := fieldsByTraversal(v, traversals, fields, true); err != nil {
