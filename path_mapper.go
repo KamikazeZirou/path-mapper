@@ -11,6 +11,10 @@ import (
 	"github.com/KamikazeZirou/path-mapper/internal/reflectx"
 )
 
+type Parser interface {
+	Parse(s string) interface{}
+}
+
 func lcFirst(s string) string {
 	for i, v := range s {
 		return string(unicode.ToLower(v)) + s[i+1:]
@@ -180,6 +184,11 @@ func convertAssign(src string, dest interface{}) error {
 	}
 
 	dv := reflect.Indirect(dpv)
+	if parser, ok := dest.(Parser); ok {
+		dv.Set(reflect.ValueOf(parser.Parse(src)))
+		return nil
+	}
+
 	switch dv.Kind() {
 	case reflect.Ptr:
 		dv.Set(reflect.New(dv.Type().Elem()))
