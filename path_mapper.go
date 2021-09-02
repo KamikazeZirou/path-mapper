@@ -6,6 +6,9 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"unicode"
+
+	"github.com/KamikazeZirou/path-mapper/internal/reflectx"
 )
 
 type MapperFunc func(v string) (interface{}, error)
@@ -14,159 +17,205 @@ var (
 	Mapper = make(map[string]MapperFunc)
 )
 
+func LcFirst(s string) string {
+	for i, v := range s {
+		return string(unicode.ToLower(v)) + s[i+1:]
+	}
+	return ""
+}
+
 // Mapping a URL or other path to a structure.
 //goland:noinspection GoUnusedExportedFunction
 func Mapping(pattern, path string, dest interface{}) error {
 	patternSegments := strings.Split(pattern, "/")
 	pathSegments := strings.Split(path, "/")
-
 	if len(pathSegments) != len(patternSegments) {
-		return fmt.Errorf("pattern(%v) does not match path(%v)", pattern, path)
+		return fmt.Errorf("pattern(%value) does not match path(%value)", pattern, path)
 	}
 
-	p := reflect.ValueOf(dest)
-
-	if p.Kind() != reflect.Ptr {
-		return errors.New("must pass a pointer, not a value, to dest")
-	}
-
-	if p.IsNil() {
-		return errors.New("must pass non-nil pointer to dest")
-	}
-
-	v := reflect.Indirect(p)
-
+	patterns := make([]string, 0, len(patternSegments))
+	values := make([]string, 0, len(patternSegments))
 	for i := 0; i < len(patternSegments); i++ {
 		patternSegment := patternSegments[i]
 		pathSegment := pathSegments[i]
 
 		if strings.HasPrefix(patternSegment, "{") && strings.HasSuffix(patternSegment, "}") {
-			err := setField(v, patternSegment[1:len(patternSegment)-1], pathSegment)
-			if err != nil {
-				return fmt.Errorf(": %w", err)
-			}
+			patterns = append(patterns, patternSegment[1:len(patternSegment)-1])
+			values = append(values, pathSegment)
 		} else if pathSegment != patternSegment {
-			return fmt.Errorf("pattern(%v) does not match path(%v)", pattern, path)
+			return fmt.Errorf("pattern(%value) does not match path(%value)", pattern, path)
+		}
+	}
+
+	v := reflect.ValueOf(dest)
+
+	if v.Kind() != reflect.Ptr {
+		return errors.New("must pass a pointer, not a value, to dest")
+	}
+
+	if v.IsNil() {
+		return errors.New("must pass non-nil pointer to dest")
+	}
+
+	m := reflectx.NewMapperFunc("alias", LcFirst)
+	traversals := m.TraversalsByName(v.Type(), patterns)
+	fields := make([]interface{}, len(patterns))
+	if err := fieldsByTraversal(v, traversals, fields, true); err != nil {
+		return err
+	}
+
+	for i, value := range values {
+		if len(traversals[i]) == 0 {
+			// Allow missing fields
+			continue
+		}
+
+		if err := convertAssign(value, fields[i]); err != nil {
+			return fmt.Errorf("failed mapping %v into %v : %w", value, fields[i], err)
 		}
 	}
 
 	return nil
 }
 
-func setField(sv reflect.Value, n, v string) error {
-	f := sv.FieldByName(strings.Title(n))
-	if !f.IsValid() {
+func fieldsByTraversal(v reflect.Value, traversals [][]int, values []interface{}, ptrs bool) error {
+	v = reflect.Indirect(v)
+	if v.Kind() != reflect.Struct {
+		return errors.New("argument not a struct")
+	}
+
+	for i, traversal := range traversals {
+		if len(traversal) == 0 {
+			values[i] = new(interface{})
+			continue
+		}
+		f := reflectx.FieldByIndexes(v, traversal)
+		if ptrs {
+			values[i] = f.Addr().Interface()
+		} else {
+			values[i] = f.Interface()
+		}
+	}
+	return nil
+}
+
+func convertAssign(src string, dest interface{}) error {
+	switch d := dest.(type) {
+	case *string:
+		*d = src
 		return nil
-	}
-
-	if !f.CanSet() {
-		return fmt.Errorf("%v cannot be set value", n)
-	}
-
-	if mapper, ok := Mapper[n]; ok {
-		if mv, err := mapper(v); err == nil {
-			f.Set(reflect.ValueOf(mv))
+	case *int:
+		if v, err := strconv.ParseInt(src, 10, 0); err == nil {
+			*d = int(v)
 			return nil
 		} else {
-			return fmt.Errorf(": %w", err)
+			return fmt.Errorf("%v is invalid as int", src)
+		}
+	case *int8:
+		if v, err := strconv.ParseInt(src, 10, 0); err == nil {
+			*d = int8(v)
+			return nil
+		} else {
+			return fmt.Errorf("%v is invalid as int", src)
+		}
+	case *int16:
+		if v, err := strconv.ParseInt(src, 10, 0); err == nil {
+			*d = int16(v)
+			return nil
+		} else {
+			return fmt.Errorf("%v is invalid as int", src)
+		}
+	case *int32:
+		if v, err := strconv.ParseInt(src, 10, 0); err == nil {
+			*d = int32(v)
+			return nil
+		} else {
+			return fmt.Errorf("%v is invalid as int", src)
+		}
+	case *int64:
+		if v, err := strconv.ParseInt(src, 10, 0); err == nil {
+			*d = v
+			return nil
+		} else {
+			return fmt.Errorf("%v is invalid as int", src)
+		}
+	case *uint:
+		if v, err := strconv.ParseUint(src, 10, 0); err == nil {
+			*d = uint(v)
+			return nil
+		} else {
+			return fmt.Errorf("%v is invalid as uint", src)
+		}
+	case *uint8:
+		if v, err := strconv.ParseUint(src, 10, 0); err == nil {
+			*d = uint8(v)
+			return nil
+		} else {
+			return fmt.Errorf("%v is invalid as uint", src)
+		}
+	case *uint16:
+		if v, err := strconv.ParseUint(src, 10, 0); err == nil {
+			*d = uint16(v)
+			return nil
+		} else {
+			return fmt.Errorf("%v is invalid as uint", src)
+		}
+	case *uint32:
+		if v, err := strconv.ParseUint(src, 10, 0); err == nil {
+			*d = uint32(v)
+			return nil
+		} else {
+			return fmt.Errorf("%v is invalid as uint", src)
+		}
+	case *uint64:
+		if v, err := strconv.ParseUint(src, 10, 0); err == nil {
+			*d = v
+			return nil
+		} else {
+			return fmt.Errorf("%v is invalid as uint", src)
 		}
 	}
 
-	switch f.Kind() {
+	dpv := reflect.ValueOf(dest)
+	if dpv.Kind() != reflect.Ptr {
+		return errors.New("destination not a pointer")
+	}
+
+	if dpv.IsNil() {
+		return errors.New("destination pointer is nil")
+	}
+
+	dv := reflect.Indirect(dpv)
+	switch dv.Kind() {
+	case reflect.Ptr:
+		dv.Set(reflect.New(dv.Type().Elem()))
+		return convertAssign(src, dv.Interface())
 	case reflect.Int,
 		reflect.Int8,
 		reflect.Int16,
 		reflect.Int32,
 		reflect.Int64:
-		if v, err := strconv.ParseInt(v, 10, 0); err == nil {
-			f.SetInt(v)
+		if v, err := strconv.ParseInt(src, 10, 0); err == nil {
+			dv.SetInt(v)
+			return nil
 		} else {
-			return fmt.Errorf("failed mapping %v to %v because it is not int", v, f)
+			return fmt.Errorf("%v is invalid as int", src)
 		}
 	case reflect.Uint,
 		reflect.Uint8,
 		reflect.Uint16,
 		reflect.Uint32,
 		reflect.Uint64:
-		if v, err := strconv.ParseUint(v, 10, 0); err == nil {
-			f.SetUint(v)
+		if v, err := strconv.ParseUint(src, 10, 0); err == nil {
+			dv.SetUint(v)
+			return nil
 		} else {
-			return fmt.Errorf("failed mapping %v to %v because it is not int", v, f)
+			return fmt.Errorf("%v is invalid as uint", src)
 		}
 	case reflect.String:
-		f.SetString(v)
-	case reflect.Ptr:
-		t := deref(f.Type())
-		switch t.Kind() {
-		case reflect.Int,
-			reflect.Int8,
-			reflect.Int16,
-			reflect.Int32,
-			reflect.Int64:
-			if v, err := strconv.ParseInt(v, 10, 0); err == nil {
-				setIntPtr(f, t.Kind(), v)
-			} else {
-				return fmt.Errorf("failed mapping %v to %v because it is not int", v, f)
-			}
-		case reflect.Uint,
-			reflect.Uint8,
-			reflect.Uint16,
-			reflect.Uint32,
-			reflect.Uint64:
-			if v, err := strconv.ParseUint(v, 10, 0); err == nil {
-				setUintPtr(f, t.Kind(), v)
-			} else {
-				return fmt.Errorf("failed mapping %v to %v because it is not int", v, f)
-			}
-		case reflect.String:
-			f.Set(reflect.ValueOf(&v))
-		}
+		dv.SetString(src)
+		return nil
 	}
 
-	return nil
-}
-
-func setIntPtr(p reflect.Value, k reflect.Kind, x int64) {
-	switch k {
-	case reflect.Int:
-		v := int(x)
-		p.Set(reflect.ValueOf(&v))
-	case reflect.Int8:
-		v := int8(x)
-		p.Set(reflect.ValueOf(&v))
-	case reflect.Int16:
-		v := int16(x)
-		p.Set(reflect.ValueOf(&v))
-	case reflect.Int32:
-		v := int32(x)
-		p.Set(reflect.ValueOf(&v))
-	case reflect.Int64:
-		p.Set(reflect.ValueOf(&x))
-	}
-}
-
-func setUintPtr(p reflect.Value, k reflect.Kind, x uint64) {
-	switch k {
-	case reflect.Uint:
-		v := uint(x)
-		p.Set(reflect.ValueOf(&v))
-	case reflect.Uint8:
-		v := uint8(x)
-		p.Set(reflect.ValueOf(&v))
-	case reflect.Uint16:
-		v := uint16(x)
-		p.Set(reflect.ValueOf(&v))
-	case reflect.Uint32:
-		v := uint32(x)
-		p.Set(reflect.ValueOf(&v))
-	case reflect.Uint64:
-		p.Set(reflect.ValueOf(&x))
-	}
-}
-
-func deref(t reflect.Type) reflect.Type {
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-	return t
+	return fmt.Errorf("unsupported conversion. Value type %T into type %T", src, dest)
 }
