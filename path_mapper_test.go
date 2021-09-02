@@ -13,6 +13,22 @@ type GitHubIssue struct {
 	StrNumber  string
 }
 
+type Weather int32
+
+const (
+	WeatherUnknown Weather = 0
+	WeatherFine    Weather = 1
+)
+
+func (w *Weather) Parse(s string) interface{} {
+	switch s {
+	case "fine":
+		return WeatherFine
+	default:
+		return WeatherUnknown
+	}
+}
+
 type Values struct {
 	Int          int
 	Int8         int8
@@ -25,6 +41,7 @@ type Values struct {
 	Uint32       uint32
 	Uint64       uint64
 	Str          string
+	Weather      Weather
 	MissingField int
 }
 
@@ -40,6 +57,7 @@ type Pointers struct {
 	Uint32       *uint32
 	Uint64       *uint64
 	Str          *string
+	Weather      *Weather
 	MissingField *int
 }
 
@@ -71,24 +89,25 @@ func TestMapping(t *testing.T) {
 		{
 			name: "Embed Struct",
 			args: args{
-				pattern: "/{int}/{int8}/{int16}/{int32}/{int64}/{uint}/{uint8}/{uint16}/{uint32}/{uint64}/{str}",
-				path:    "/1/2/3/4/5/6/7/8/9/10/abc",
+				pattern: "/{int}/{int8}/{int16}/{int32}/{int64}/{uint}/{uint8}/{uint16}/{uint32}/{uint64}/{str}/{weather}",
+				path:    "/1/2/3/4/5/6/7/8/9/10/abc/fine",
 				st:      &EmbedValues{},
 			},
 			want: want{
 				st: &EmbedValues{
 					Values: Values{
-						Int:    1,
-						Int8:   2,
-						Int16:  3,
-						Int32:  4,
-						Int64:  5,
-						Uint:   6,
-						Uint8:  7,
-						Uint16: 8,
-						Uint32: 9,
-						Uint64: 10,
-						Str:    "abc",
+						Int:     1,
+						Int8:    2,
+						Int16:   3,
+						Int32:   4,
+						Int64:   5,
+						Uint:    6,
+						Uint8:   7,
+						Uint16:  8,
+						Uint32:  9,
+						Uint64:  10,
+						Weather: WeatherFine,
+						Str:     "abc",
 					},
 				},
 				success: true,
@@ -97,24 +116,25 @@ func TestMapping(t *testing.T) {
 		{
 			name: "Embed Pointer Struct",
 			args: args{
-				pattern: "/{int}/{int8}/{int16}/{int32}/{int64}/{uint}/{uint8}/{uint16}/{uint32}/{uint64}/{str}",
-				path:    "/1/2/3/4/5/6/7/8/9/10/abc",
+				pattern: "/{int}/{int8}/{int16}/{int32}/{int64}/{uint}/{uint8}/{uint16}/{uint32}/{uint64}/{str}/{weather}",
+				path:    "/1/2/3/4/5/6/7/8/9/10/abc/fine",
 				st:      &EmbedPointers{},
 			},
 			want: want{
 				st: &EmbedPointers{
 					Pointers: &Pointers{
-						Int:    intAddr(1),
-						Int8:   int8Addr(2),
-						Int16:  int16Addr(3),
-						Int32:  int32Addr(4),
-						Int64:  int64Addr(5),
-						Uint:   uintAddr(6),
-						Uint8:  uint8Addr(7),
-						Uint16: uint16Addr(8),
-						Uint32: uint32Addr(9),
-						Uint64: uint64Addr(10),
-						Str:    strAddr("abc"),
+						Int:     intAddr(1),
+						Int8:    int8Addr(2),
+						Int16:   int16Addr(3),
+						Int32:   int32Addr(4),
+						Int64:   int64Addr(5),
+						Uint:    uintAddr(6),
+						Uint8:   uint8Addr(7),
+						Uint16:  uint16Addr(8),
+						Uint32:  uint32Addr(9),
+						Uint64:  uint64Addr(10),
+						Str:     strAddr("abc"),
+						Weather: weatherAddr(WeatherFine),
 					},
 				},
 				success: true,
@@ -354,4 +374,8 @@ func uint32Addr(i uint32) *uint32 {
 
 func uint64Addr(i uint64) *uint64 {
 	return &i
+}
+
+func weatherAddr(w Weather) *Weather {
+	return &w
 }
